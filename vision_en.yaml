@@ -408,19 +408,19 @@ grid:
       p_specified:
         multiply:
           - Load.P
-          - reference:
-              query_column: Node.Number
-              other_table: Nodes
-              key_column: Number
-              value_column: Simultaneity
+#          - reference:
+#              query_column: Node.Number
+#              other_table: Nodes
+#              key_column: Number
+#              value_column: Simultaneity
       q_specified:
         multiply:
           - Load.Q
-          - reference:
-              query_column: Node.Number
-              other_table: Nodes
-              key_column: Number
-              value_column: Simultaneity
+#          - reference:
+#              query_column: Node.Number
+#              other_table: Nodes
+#              key_column: Number
+#              value_column: Simultaneity
       extra:
         - ID
         - Name
@@ -561,22 +561,23 @@ grid:
       p_specified:
         multiply:
           - P
-          - reference:
-              query_column: Node.Number
-              other_table: Nodes
-              key_column: Number
-              value_column: Simultaneity
+#          - reference:
+#              query_column: Node.Number
+#              other_table: Nodes
+#              key_column: Number
+#              value_column: Simultaneity
       q_specified:
         multiply:
           - Q
-          - reference:
-              query_column: Node.Number
-              other_table: Nodes
-              key_column: Number
-              value_column: Simultaneity
+#          - reference:
+#              query_column: Node.Number
+#              other_table: Nodes
+#              key_column: Number
+#              value_column: Simultaneity
       extra:
         - ID
         - Name
+        - Node.ID
   Zigzag transformers:
     shunt:
       id:
