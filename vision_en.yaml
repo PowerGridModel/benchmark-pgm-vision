@@ -833,19 +833,19 @@ substitutions:
     1: true
     none: false
     own: true
-    no: false
+    "no": false
   Grounding2:
     0: false
     1: true
     none: false
     own: true
-    no: false
+    "no": false
   Grounding3:
     0: false
     1: true
     none: false
     own: true
-    no: false
+    "no": false
   Behaviour:
     Constant admittance: 1
     Constant impedance: 1
