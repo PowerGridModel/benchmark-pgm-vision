@@ -18,9 +18,8 @@ converter.set_mapping_file(vision_config)
 input_data, extra_info = converter.load_input_data()
 assert_valid_input_data(input_data)
 
-# cannot converge if put full power
-# input_data["sym_load"]["p_specified"] *= 0.5
-# input_data["sym_load"]["q_specified"] *= 0.5
+# set large sk for source
+input_data["source"]["sk"] = 1e12
 pgm = PowerGridModel(input_data)
 pgm_result = pgm.calculate_power_flow()
 print(pd.DataFrame(pgm_result["node"]))
