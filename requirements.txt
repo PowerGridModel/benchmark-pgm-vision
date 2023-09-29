@@ -1,0 +1,5 @@
+power-grid-model
+power-grid-model-io
+numpy
+pandas
+# jupyter
