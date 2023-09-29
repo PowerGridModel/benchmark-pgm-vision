@@ -1,4 +1,4 @@
-power-grid-model
+power-grid-model~=1.5.0
 power-grid-model-io
 numpy
 pandas

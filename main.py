@@ -1,5 +1,6 @@
 from power_grid_model_io.converters import VisionExcelConverter
 from power_grid_model import PowerGridModel
+from power_grid_model.validation import assert_valid_input_data
 import os
 from pathlib import Path
 import pandas as pd
@@ -15,7 +16,11 @@ input_file = DATA_PATH / "excel_input" / f"{test_case}.xlsx"
 converter = VisionExcelConverter(source_file=input_file)
 converter.set_mapping_file(vision_config)
 input_data, extra_info = converter.load_input_data()
+assert_valid_input_data(input_data)
 
+# cannot converge if put full power
+# input_data["sym_load"]["p_specified"] *= 0.5
+# input_data["sym_load"]["q_specified"] *= 0.5
 pgm = PowerGridModel(input_data)
 pgm_result = pgm.calculate_power_flow()
 print(pd.DataFrame(pgm_result["node"]))
