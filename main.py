@@ -52,6 +52,29 @@ def load_profile(input_data, extra_info, n_steps):
     return update_data
 
 
+def get_node_name_mapping(input_data, extra_info):
+    node_name_mapping = {}
+    for pgm_id, u_rated in zip(input_data["node"]["id"], input_data["node"]["u_rated"]):
+        info = extra_info[pgm_id]
+        if "Name" not in info:
+            continue
+        name = info["Name"]
+        if name not in node_name_mapping:
+            node_name_mapping[name] = []
+        node_name_mapping[name].append((pgm_id, u_rated))
+    return node_name_mapping
+
+
+def get_closest_node(nodes, avg_u):
+    dev = np.inf
+    found_id = None
+    for pgm_id, u_rated in nodes:
+        if np.abs(avg_u - u_rated) < dev:
+            found_id = pgm_id
+            dev = np.abs(avg_u - u_rated)
+    return found_id
+
+
 def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     vision_result_file = DATA_PATH / "excel_result" / f"{test_case}.xlsx"
     vision_df = pd.read_excel(
@@ -60,23 +83,28 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     vision_df.index.name = "Date & Time"
     vision_df *= 1e3
     node_names = vision_df.columns.to_list()
-    node_vision_name_to_pgm_dict = {
-        extra_info[x].get("Name", ""): x for x in pgm_result["node"][0, :]["id"]
-    }
+    node_name_mapping = get_node_name_mapping(input_data, extra_info)
     vision_node_indexer = []
     node_pgm_ids = []
     for i, name in enumerate(node_names):
-        if f"{name}.1" in node_names:
-            continue
-        if name in node_vision_name_to_pgm_dict:
+        # if f"{name}.1" in node_names:
+        #     continue
+        if name in node_name_mapping:
             vision_node_indexer.append(i)
-            node_pgm_ids.append(node_vision_name_to_pgm_dict[name])
+            node_pgm_ids.append(
+                get_closest_node(
+                    node_name_mapping[name], np.mean(vision_df.iloc[:, i].to_numpy())
+                )
+            )
     vision_node_indexer = np.array(vision_node_indexer, dtype=np.int64)
     node_pgm_ids = np.array(node_pgm_ids, dtype=np.int32)
     pgm_node_indexer = pgm.get_indexer("node", node_pgm_ids)
     u_pgm = pgm_result["node"][:, pgm_node_indexer]["u"]
     u_vision = vision_df.iloc[:, vision_node_indexer].to_numpy()
-    max_diff = np.max(np.abs(u_vision - u_pgm) / input_data['node'][pgm_node_indexer]['u_rated'].reshape(1, -1))
+    max_diff = np.max(
+        np.abs(u_vision - u_pgm)
+        / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1)
+    )
     print(f"Max voltage deviation: {max_diff} pu.")
 
 
