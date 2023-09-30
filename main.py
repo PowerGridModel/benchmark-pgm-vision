@@ -87,8 +87,8 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     vision_node_indexer = []
     node_pgm_ids = []
     for i, name in enumerate(node_names):
-        # if f"{name}.1" in node_names:
-        #     continue
+        if "." in name:
+            name = name[:-2]
         if name in node_name_mapping:
             vision_node_indexer.append(i)
             node_pgm_ids.append(
@@ -104,6 +104,10 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     max_diff = np.max(
         np.abs(u_vision - u_pgm)
         / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1)
+    )
+    max_diff_per_node = np.max(
+        np.abs(u_vision - u_pgm)
+        / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1), axis=0
     )
     print(f"Max voltage deviation: {max_diff} pu.")
 
