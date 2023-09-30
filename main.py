@@ -23,7 +23,7 @@ def load_input(test_case):
 
 
 # profile
-def load_profile(input_data, extra_info, n_steps, test_case):
+def load_profile(input_data, extra_info, n_steps):
     profile_file = DATA_PATH / "rail_profiles_OS LEEUWARDEN_2022.xlsx"
     profile_df = pd.read_excel(profile_file, sheet_name=0, skiprows=[1], nrows=n_steps)
     del profile_df["*.NewPV_*"]
@@ -56,7 +56,7 @@ def main():
     n_steps = 10
 
     input_data, extra_info = load_input(test_case)
-    update_data = load_profile(input_data, extra_info, n_steps, test_case)
+    update_data = load_profile(input_data, extra_info, n_steps)
 
     pgm = PowerGridModel(input_data)
     pgm_result = pgm.calculate_power_flow(update_data=update_data)
