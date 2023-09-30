@@ -11,7 +11,8 @@ DATA_PATH = Path(os.environ["PGM_VISION_DATA_PATH"])
 
 
 # input
-def load_input(input_file):
+def load_input(test_case):
+    input_file = DATA_PATH / "excel_input" / f"{test_case}.xlsx"
     converter = VisionExcelConverter(source_file=input_file)
     converter.set_mapping_file(vision_config)
     input_data, extra_info = converter.load_input_data()
@@ -22,7 +23,8 @@ def load_input(input_file):
 
 
 # profile
-def load_profile(input_data, extra_info, n_steps, profile_file):
+def load_profile(input_data, extra_info, n_steps, test_case):
+    profile_file = DATA_PATH / "rail_profiles_OS LEEUWARDEN_2022.xlsx"
     profile_df = pd.read_excel(profile_file, sheet_name=0, skiprows=[1], nrows=n_steps)
     del profile_df["*.NewPV_*"]
     profile_df["Date & Time"] = pd.to_datetime(
@@ -52,11 +54,9 @@ def load_profile(input_data, extra_info, n_steps, profile_file):
 def main():
     test_case = "Leeuwarden_small_P"
     n_steps = 10
-    input_file = DATA_PATH / "excel_input" / f"{test_case}.xlsx"
-    profile_file = DATA_PATH / "rail_profiles_OS LEEUWARDEN_2022.xlsx"
 
-    input_data, extra_info = load_input(input_file)
-    update_data = load_profile(input_data, extra_info, n_steps, profile_file)
+    input_data, extra_info = load_input(test_case)
+    update_data = load_profile(input_data, extra_info, n_steps, test_case)
 
     pgm = PowerGridModel(input_data)
     pgm_result = pgm.calculate_power_flow(update_data=update_data)
