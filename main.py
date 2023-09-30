@@ -62,7 +62,15 @@ def get_node_name_mapping(input_data, extra_info):
         if name not in node_name_mapping:
             node_name_mapping[name] = []
         node_name_mapping[name].append((pgm_id, u_rated))
+    node_name_mapping = {
+        k: v for k, v in node_name_mapping.items() if check_u_rated_no_duplicates(v)
+    }
     return node_name_mapping
+
+
+def check_u_rated_no_duplicates(info):
+    u_rated = np.array([x[1] for x in info])
+    return u_rated.size == np.unique(u_rated).size
 
 
 def get_closest_node(nodes, avg_u):
@@ -101,15 +109,13 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     pgm_node_indexer = pgm.get_indexer("node", node_pgm_ids)
     u_pgm = pgm_result["node"][:, pgm_node_indexer]["u"]
     u_vision = vision_df.iloc[:, vision_node_indexer].to_numpy()
-    max_diff = np.max(
-        np.abs(u_vision - u_pgm)
-        / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1)
+    diff = np.abs(u_vision - u_pgm)
+    max_diff = np.max(diff)
+    max_diff_pu = np.max(
+        diff / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1)
     )
-    max_diff_per_node = np.max(
-        np.abs(u_vision - u_pgm)
-        / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1), axis=0
-    )
-    print(f"Max voltage deviation: {max_diff} pu.")
+    print(f"Max voltage deviation: {max_diff} V.")
+    print(f"Max voltage deviation: {max_diff_pu} pu.")
 
 
 def main():
