@@ -114,8 +114,16 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     max_diff_pu = np.max(
         diff / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1)
     )
+    max_diff_per_node = np.max(diff, axis=0)
     print(f"Max voltage deviation: {max_diff} V.")
     print(f"Max voltage deviation: {max_diff_pu} pu.")
+    node_names_large_dev = [
+        node_names[vision_node_indexer[i]]
+        for i, dev in enumerate(max_diff_per_node)
+        if dev > 1.0
+    ]
+    print(f"Nodes with deviation larger than 1 volt: {len(node_names_large_dev)}")
+    print(node_names_large_dev)
 
 
 def main():
