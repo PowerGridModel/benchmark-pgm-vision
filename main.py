@@ -54,33 +54,19 @@ def load_profile(input_data, extra_info, n_steps):
 
 def get_node_name_mapping(input_data, extra_info):
     node_name_mapping = {}
-    for pgm_id, u_rated in zip(input_data["node"]["id"], input_data["node"]["u_rated"]):
+    for pgm_id in input_data["node"]["id"]:
         info = extra_info[pgm_id]
         if "Name" not in info:
             continue
         name = info["Name"]
         if name not in node_name_mapping:
-            node_name_mapping[name] = []
-        node_name_mapping[name].append((pgm_id, u_rated))
-    node_name_mapping = {
-        k: v for k, v in node_name_mapping.items() if check_u_rated_no_duplicates(v)
-    }
+            node_name_mapping[name] = pgm_id
+        else:
+            number = 1
+            while f"{name}.{number}" in node_name_mapping:
+                number += 1
+            node_name_mapping[f"{name}.{number}"] = pgm_id
     return node_name_mapping
-
-
-def check_u_rated_no_duplicates(info):
-    u_rated = np.array([x[1] for x in info])
-    return u_rated.size == np.unique(u_rated).size
-
-
-def get_closest_node(nodes, avg_u):
-    dev = np.inf
-    found_id = None
-    for pgm_id, u_rated in nodes:
-        if np.abs(avg_u - u_rated) < dev:
-            found_id = pgm_id
-            dev = np.abs(avg_u - u_rated)
-    return found_id
 
 
 def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
@@ -95,40 +81,37 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     vision_node_indexer = []
     node_pgm_ids = []
     for i, name in enumerate(node_names):
-        if "." in name:
-            name = name[:-2]
         if name in node_name_mapping:
             vision_node_indexer.append(i)
-            node_pgm_ids.append(
-                get_closest_node(
-                    node_name_mapping[name], np.mean(vision_df.iloc[:, i].to_numpy())
-                )
-            )
+            node_pgm_ids.append(node_name_mapping[name])
     vision_node_indexer = np.array(vision_node_indexer, dtype=np.int64)
     node_pgm_ids = np.array(node_pgm_ids, dtype=np.int32)
     pgm_node_indexer = pgm.get_indexer("node", node_pgm_ids)
     u_pgm = pgm_result["node"][:, pgm_node_indexer]["u"]
     u_vision = vision_df.iloc[:, vision_node_indexer].to_numpy()
     diff = np.abs(u_vision - u_pgm)
-    max_diff = np.max(diff)
-    max_diff_pu = np.max(
-        diff / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1)
-    )
     max_diff_per_node = np.max(diff, axis=0)
+    max_diff_pu_per_node = np.max(
+        diff / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1), axis=0
+    )
+    max_diff = np.max(max_diff_per_node)
+    max_diff_pu = np.max(max_diff_pu_per_node)
     print(f"Max voltage deviation: {max_diff} V.")
     print(f"Max voltage deviation: {max_diff_pu} pu.")
-    node_names_large_dev = [
-        node_names[vision_node_indexer[i]]
-        for i, dev in enumerate(max_diff_per_node)
-        if dev > 1.0
-    ]
-    print(f"Nodes with deviation larger than 1 volt: {len(node_names_large_dev)}")
-    print(node_names_large_dev)
+    mv_select = input_data["node"][pgm_node_indexer]["u_rated"] > 1e3
+    max_diff_mv = np.max(max_diff_per_node[mv_select])
+    max_diff_pu_mv = np.max(max_diff_pu_per_node[mv_select])
+    max_diff_lv = np.max(max_diff_per_node[~mv_select])
+    max_diff_pu_lv = np.max(max_diff_pu_per_node[~mv_select])
+    print(f"Max MV voltage deviation: {max_diff_mv} V.")
+    print(f"Max MV voltage deviation: {max_diff_pu_mv} pu.")
+    print(f"Max LV voltage deviation: {max_diff_lv} V.")
+    print(f"Max LV voltage deviation: {max_diff_pu_lv} pu.")
 
 
 def main():
     test_case = "Leeuwarden_small_P"
-    n_steps = 20
+    n_steps = 100
 
     input_data, extra_info = load_input(test_case)
     update_data = load_profile(input_data, extra_info, n_steps)
