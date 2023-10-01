@@ -28,6 +28,7 @@ def load_profile(input_data, extra_info, n_steps):
     profile_file = DATA_PATH / "rail_profiles_OS LEEUWARDEN_2022.xlsx"
     profile_df = pd.read_excel(profile_file, sheet_name=0, skiprows=[1], nrows=n_steps)
     del profile_df["*.NewPV_*"]
+    n_steps = profile_df.shape[0]
     profile_df["Date & Time"] = pd.to_datetime(
         profile_df["Date & Time"], format="%d-%m-%Y %H:%M"
     )
