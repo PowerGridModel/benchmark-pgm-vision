@@ -6,6 +6,7 @@ import numpy as np
 from power_grid_model import PowerGridModel, initialize_array
 from power_grid_model.validation import assert_valid_input_data
 from power_grid_model_io.converters import VisionExcelConverter
+import argparse
 
 vision_config = Path(__file__).parent / "vision_en.yaml"
 
@@ -102,10 +103,14 @@ def compare_result(data_path, input_data, pgm, pgm_result, extra_info, test_case
 
 
 def main():
-    data_path = Path(os.environ["PGM_VISION_DATA_PATH"])
-
-    test_case = "Leeuwarden_small_P"
-    n_steps = 100
+    parser = argparse.ArgumentParser()
+    parser.add_argument("data_path", type=Path, help="Path to the data")
+    parser.add_argument("--n-steps", type=int, help="Number of steps to run")
+    parser.add_argument("--test-case", type=str, help="Name of test case")
+    args = parser.parse_args()
+    data_path = args.data_path
+    n_steps = args.n_steps
+    test_case = args.test_case
 
     input_data, extra_info = load_input(test_case, data_path)
     update_data = load_profile(data_path, input_data, extra_info, n_steps)
