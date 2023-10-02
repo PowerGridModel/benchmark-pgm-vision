@@ -34,7 +34,17 @@ def load_profile(data_path, input_data, extra_info, n_steps):
     profile_df *= 1e3
     col_node_ids = [x.strip(".*") for x in profile_df.columns]
     node_ids_index = pd.Index(col_node_ids)
-    all_load_node_ids = [str(int(extra_info[x].get("Node.ID", 0))) for x in input_data["sym_load"]["id"]]
+    all_load_node_ids = []
+    for pgm_node_id in input_data["sym_load"]["id"]:
+        info = extra_info[pgm_node_id]
+        if "Node.ID" in info:
+            node_id = info["Node.ID"]
+            if isinstance(node_id, float):
+                all_load_node_ids.append(str(int(node_id)))
+            else:
+                all_load_node_ids.append(str(node_id))
+        else:
+            all_load_node_ids.append("")
     indexer = node_ids_index.get_indexer(all_load_node_ids)
     has_profile = indexer >= 0
     loads_with_profile = input_data["sym_load"][has_profile]
