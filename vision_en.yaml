@@ -578,7 +578,7 @@ grid:
         - ID
         - Name
         - Node.ID
-  Zigzag transformers:
+  Earthing transformers:
     shunt:
       id:
         auto_id:
