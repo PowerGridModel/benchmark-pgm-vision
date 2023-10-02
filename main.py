@@ -17,7 +17,7 @@ def load_input(test_case, data_path):
     converter.set_mapping_file(vision_config)
     input_data, extra_info = converter.load_input_data()
     # set large sk for source because Vision treats source as ideal voltage source
-    input_data["source"]["sk"] = 1e12
+    input_data["source"]["sk"] = 1e20
     assert_valid_input_data(input_data)
     return input_data, extra_info
 
