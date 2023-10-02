@@ -25,8 +25,8 @@ def load_input(test_case):
 
 # profile
 def load_profile(input_data, extra_info, n_steps):
-    profile_file = DATA_PATH / "rail_profiles_OS LEEUWARDEN_2022.xlsx"
-    profile_df = pd.read_excel(profile_file, sheet_name=0, skiprows=[1], nrows=n_steps)
+    profile_file = DATA_PATH / "rail_profiles_OS LEEUWARDEN_2022.csv"
+    profile_df = pd.read_csv(profile_file, skiprows=[1], nrows=n_steps, engine="c")
     del profile_df["*.NewPV_*"]
     n_steps = profile_df.shape[0]
     profile_df["Date & Time"] = pd.to_datetime(
@@ -71,9 +71,9 @@ def get_node_name_mapping(input_data, extra_info):
 
 
 def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
-    vision_result_file = DATA_PATH / "excel_result" / f"{test_case}.xlsx"
-    vision_df = pd.read_excel(
-        vision_result_file, sheet_name="Knooppunten", skiprows=[1, 2], nrows=n_steps
+    vision_result_file = DATA_PATH / "excel_result" / f"{test_case}.node.csv"
+    vision_df = pd.read_csv(
+        vision_result_file, skiprows=[1, 2], nrows=n_steps, engine="c"
     ).set_index("Naam")
     vision_df.index.name = "Date & Time"
     vision_df *= 1e3
