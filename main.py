@@ -34,7 +34,7 @@ def load_profile(data_path, input_data, extra_info, n_steps):
     profile_df *= 1e3
     col_node_ids = [x.strip(".*") for x in profile_df.columns]
     node_ids_index = pd.Index(col_node_ids)
-    all_load_node_ids = [str(extra_info[x].get("Node.ID", 0)) for x in input_data["sym_load"]["id"]]
+    all_load_node_ids = [str(int(extra_info[x].get("Node.ID", 0))) for x in input_data["sym_load"]["id"]]
     indexer = node_ids_index.get_indexer(all_load_node_ids)
     has_profile = indexer >= 0
     loads_with_profile = input_data["sym_load"][has_profile]
@@ -68,7 +68,9 @@ def get_node_name_mapping(input_data, extra_info):
 
 def compare_result(data_path, input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     vision_result_file = data_path / "excel_result" / f"{test_case}.node.csv"
-    vision_df = pd.read_csv(vision_result_file, skiprows=[1, 2], nrows=n_steps, engine="c").set_index("Naam")
+    vision_df = pd.read_csv(vision_result_file, skiprows=[1, 2], nrows=n_steps, engine="c")
+    vision_df["Naam"] = pd.to_datetime(vision_df["Naam"], format="%d/%m/%Y %H:%M")
+    vision_df = vision_df.set_index("Naam")
     vision_df.index.name = "Date & Time"
     vision_df *= 1e3
     node_names = vision_df.columns.to_list()
