@@ -29,16 +29,12 @@ def load_profile(input_data, extra_info, n_steps):
     profile_df = pd.read_csv(profile_file, skiprows=[1], nrows=n_steps, engine="c")
     del profile_df["*.NewPV_*"]
     n_steps = profile_df.shape[0]
-    profile_df["Date & Time"] = pd.to_datetime(
-        profile_df["Date & Time"], format="%d-%m-%Y %H:%M"
-    )
+    profile_df["Date & Time"] = pd.to_datetime(profile_df["Date & Time"], format="%d-%m-%Y %H:%M")
     profile_df = profile_df.set_index("Date & Time")
     profile_df *= 1e3
     col_node_ids = [x.strip(".*") for x in profile_df.columns]
     node_ids_index = pd.Index(col_node_ids)
-    all_load_node_ids = [
-        str(int(extra_info[x].get("Node.ID", 0))) for x in input_data["sym_load"]["id"]
-    ]
+    all_load_node_ids = [str(int(extra_info[x].get("Node.ID", 0))) for x in input_data["sym_load"]["id"]]
     indexer = node_ids_index.get_indexer(all_load_node_ids)
     has_profile = indexer >= 0
     loads_with_profile = input_data["sym_load"][has_profile]
@@ -46,9 +42,9 @@ def load_profile(input_data, extra_info, n_steps):
     load_update = initialize_array("update", "sym_load", (n_steps, indexer.size))
     load_update["id"] = loads_with_profile["id"].reshape(1, -1)
     load_update["p_specified"] = profile_df.to_numpy()[:, indexer]
-    load_update["q_specified"] = (
-        loads_with_profile["q_specified"] / loads_with_profile["p_specified"]
-    ).reshape(1, -1) * load_update["p_specified"]
+    load_update["q_specified"] = (loads_with_profile["q_specified"] / loads_with_profile["p_specified"]).reshape(
+        1, -1
+    ) * load_update["p_specified"]
     update_data = {"sym_load": load_update}
     return update_data
 
@@ -72,9 +68,7 @@ def get_node_name_mapping(input_data, extra_info):
 
 def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     vision_result_file = DATA_PATH / "excel_result" / f"{test_case}.node.csv"
-    vision_df = pd.read_csv(
-        vision_result_file, skiprows=[1, 2], nrows=n_steps, engine="c"
-    ).set_index("Naam")
+    vision_df = pd.read_csv(vision_result_file, skiprows=[1, 2], nrows=n_steps, engine="c").set_index("Naam")
     vision_df.index.name = "Date & Time"
     vision_df *= 1e3
     node_names = vision_df.columns.to_list()
@@ -92,9 +86,7 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
     u_vision = vision_df.iloc[:, vision_node_indexer].to_numpy()
     diff = np.abs(u_vision - u_pgm)
     max_diff_per_node = np.max(diff, axis=0)
-    max_diff_pu_per_node = np.max(
-        diff / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1), axis=0
-    )
+    max_diff_pu_per_node = np.max(diff / input_data["node"][pgm_node_indexer]["u_rated"].reshape(1, -1), axis=0)
     max_diff = np.max(max_diff_per_node)
     max_diff_pu = np.max(max_diff_pu_per_node)
     print(f"Max voltage deviation: {max_diff} V.")
