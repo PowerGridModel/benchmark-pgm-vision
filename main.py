@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -60,9 +59,11 @@ def load_profile(data_path, input_data, extra_info, n_steps):
     return update_data
 
 
-def get_node_name_mapping(input_data, extra_info):
+def get_node_name_mapping(pgm_result, extra_info):
     node_name_mapping = {}
-    for pgm_id in input_data["node"]["id"]:
+    for pgm_id, energized in zip(pgm_result["node"][0, :]["id"], pgm_result["node"][0, :]["energized"]):
+        if energized == 0:
+            continue
         info = extra_info[pgm_id]
         if "Name" not in info:
             continue
@@ -85,7 +86,7 @@ def compare_result(data_path, input_data, pgm, pgm_result, extra_info, test_case
     vision_df.index.name = "Date & Time"
     vision_df *= 1e3
     node_names = vision_df.columns.to_list()
-    node_name_mapping = get_node_name_mapping(input_data, extra_info)
+    node_name_mapping = get_node_name_mapping(pgm_result, extra_info)
     vision_node_indexer = []
     node_pgm_ids = []
     for i, name in enumerate(node_names):
