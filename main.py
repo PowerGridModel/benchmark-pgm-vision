@@ -8,12 +8,11 @@ from power_grid_model.validation import assert_valid_input_data
 from power_grid_model_io.converters import VisionExcelConverter
 
 vision_config = Path(__file__).parent / "vision_en.yaml"
-DATA_PATH = Path(os.environ["PGM_VISION_DATA_PATH"])
 
 
 # input
-def load_input(test_case):
-    input_file = DATA_PATH / "excel_input" / f"{test_case}.xlsx"
+def load_input(test_case, data_path):
+    input_file = data_path / "excel_input" / f"{test_case}.xlsx"
     converter = VisionExcelConverter(source_file=input_file)
     converter.set_mapping_file(vision_config)
     input_data, extra_info = converter.load_input_data()
@@ -24,8 +23,8 @@ def load_input(test_case):
 
 
 # profile
-def load_profile(input_data, extra_info, n_steps):
-    profile_file = DATA_PATH / "rail_profiles_OS LEEUWARDEN_2022.csv"
+def load_profile(data_path, input_data, extra_info, n_steps):
+    profile_file = data_path / "rail_profiles_OS LEEUWARDEN_2022.csv"
     profile_df = pd.read_csv(profile_file, skiprows=[1], nrows=n_steps, engine="c")
     del profile_df["*.NewPV_*"]
     n_steps = profile_df.shape[0]
@@ -66,8 +65,8 @@ def get_node_name_mapping(input_data, extra_info):
     return node_name_mapping
 
 
-def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
-    vision_result_file = DATA_PATH / "excel_result" / f"{test_case}.node.csv"
+def compare_result(data_path, input_data, pgm, pgm_result, extra_info, test_case, n_steps):
+    vision_result_file = data_path / "excel_result" / f"{test_case}.node.csv"
     vision_df = pd.read_csv(vision_result_file, skiprows=[1, 2], nrows=n_steps, engine="c").set_index("Naam")
     vision_df.index.name = "Date & Time"
     vision_df *= 1e3
@@ -103,17 +102,19 @@ def compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps):
 
 
 def main():
+    data_path = Path(os.environ["PGM_VISION_DATA_PATH"])
+
     test_case = "Leeuwarden_small_P"
     n_steps = 100
 
-    input_data, extra_info = load_input(test_case)
-    update_data = load_profile(input_data, extra_info, n_steps)
+    input_data, extra_info = load_input(test_case, data_path)
+    update_data = load_profile(data_path, input_data, extra_info, n_steps)
 
     pgm = PowerGridModel(input_data)
     pgm_result = pgm.calculate_power_flow(update_data=update_data)
     print(pd.DataFrame(pgm_result["node"][0, :]))
 
-    compare_result(input_data, pgm, pgm_result, extra_info, test_case, n_steps)
+    compare_result(data_path, input_data, pgm, pgm_result, extra_info, test_case, n_steps)
 
 
 if __name__ == "__main__":
