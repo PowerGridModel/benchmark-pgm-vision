@@ -68,13 +68,16 @@ def get_id_map(extra_info):
         "Transformers": "transformator",
         "Loads": "belasting",
         "Earthing transformers": "nulpuntstransformator",
-        "Sources": "netvoeding"
+        "Sources": "netvoeding",
     }
     id_map = {}
     for i, info in extra_info.items():
         ref = info["id_reference"]
         name = name_map[ref["table"]]
-        if "Subnumber" in ref["key"]:
+        if name == "Nodes":
+            number = ref["key"]["Number"]
+            value = f"{number}"
+        elif "Subnumber" in ref["key"]:
             sub_number = ref["key"]["Subnumber"]
             node_number = ref["key"]["Node.Number"]
             value = f"{name}.{node_number}.{sub_number}"
@@ -85,25 +88,86 @@ def get_id_map(extra_info):
     return pd.Series(id_map)
 
 
+def load_single_result_type(df, input_data, pgm_component, id_map, attribute_map):
+    dfs = []
+    dfs_matching_ids = []
+    dfs_matching_col_idx = []
+    input_data = input_data[pgm_component]
+    ids = input_data["id"]
+    col_names = id_map.loc[ids]
+
+    for attr in attribute_map.values():
+        attr_df = df.loc[:, (slice(None), attr)].droplevel(1, axis=1)
+        dfs.append(attr_df)
+        col_idx = attr_df.columns.get_indexer(col_names)
+        id_found = col_idx >= 0
+        matching_ids = ids[id_found]
+        matching_col_idx = col_idx[id_found]
+        dfs_matching_ids.append(matching_ids)
+        dfs_matching_col_idx.append(matching_col_idx)
+
+    if len(attribute_map) > 1:
+        for ids1, ids2 in zip(dfs_matching_ids[:1], dfs_matching_ids[1:]):
+            assert np.all(ids1 == ids2)
+    matching_ids = dfs_matching_ids[0]
+    matching_col_idx = dfs_matching_col_idx[0]
+
+    result_array = initialize_array("sym_output", pgm_component, shape=(df.shape[0], matching_ids.size))
+    result_array["id"] = matching_ids.reshape(1, -1)
+    for pgm_attr, attr_df in zip(attribute_map.keys(), dfs):
+        result_array[pgm_attr] = attr_df.iloc[:, matching_col_idx]
+
+    return result_array
+
+
+def load_single_result_sheet(
+    result_path, input_data, id_map, n_steps, sheet, pgm_components, attribute_map, multiplier
+):
+    df = pd.read_csv(result_path / f"{sheet}.csv", skiprows=[2], nrows=n_steps, engine="c", header=[0, 1]).iloc[:, 1:]
+    df *= multiplier
+    result_dict = {}
+    for pgm_component in pgm_components:
+        result_dict[pgm_component] = load_single_result_type(df, input_data, pgm_component, id_map, attribute_map)
+
+    return result_dict
+
+
 def load_vision_results(test_case, data_path, input_data, extra_info, n_steps):
     result_path = data_path / "csv_result" / test_case
     id_map = get_id_map(extra_info)
-    # node
-    node_df = pd.read_csv(result_path / "node.csv", skiprows=[2], nrows=n_steps, engine="c", header=[0, 1]).iloc[:, 1:]
-    node_df = node_df.loc[:, (slice(None), "U")].droplevel(1, axis=1)
-    node_df *= 1e3
-    cols = node_df.columns
-    node_df.columns = [f"Nodes.{x}" for x in cols]
-    node_ids = input_data["node"]["id"]
-    col_names = id_map.loc[input_data["node"]["id"]]
-    col_idx = node_df.columns.get_indexer(col_names)
-    node_found = col_idx >= 0
-    node_ids = node_ids[node_found]
-    col_idx = col_idx[node_found]
-    node_result = initialize_array("sym_output", "node", shape=(n_steps, node_ids.size))
-    node_result["id"] = node_ids.reshape(1, -1)
-    node_result["u"] = node_df.iloc[:, col_idx]
-    return {"node": node_result}
+
+    node_output = load_single_result_sheet(
+        result_path,
+        input_data,
+        id_map,
+        n_steps,
+        sheet="node",
+        pgm_components=["node"],
+        attribute_map={"u": "U"},
+        multiplier=1e3,
+    )
+    branch_output = load_single_result_sheet(
+        result_path,
+        input_data,
+        id_map,
+        n_steps,
+        sheet="branch",
+        pgm_components=["line", "transformer", "link"],
+        attribute_map={"p_from": "P1", "p_to": "P2", "q_from": "Q1", "q_to": "Q2"},
+        multiplier=1e6,
+    )
+    appliance_output = load_single_result_sheet(
+        result_path,
+        input_data,
+        id_map,
+        n_steps,
+        sheet="appliance",
+        pgm_components=["sym_load", "source"],
+        attribute_map={"p": "P", "q": "Q"},
+        multiplier=1e6,
+    )
+
+    return {**node_output, **branch_output, **appliance_output}
 
 
 class NpEncoder(json.JSONEncoder):
