@@ -47,7 +47,7 @@ def main():
     parser.add_argument("data_path", type=Path, help="Path to the data")
     parser.add_argument("--n-steps", type=int, help="Number of steps to run")
     parser.add_argument("--test-case", type=str, help="Name of test case")
-    parser.add_argument("--calculation_method", type=str, help="Calculation method", default="newton_raphson")
+    parser.add_argument("--calculation-method", type=str, help="Calculation method", default="newton_raphson")
 
     args = parser.parse_args()
     data_path = args.data_path
