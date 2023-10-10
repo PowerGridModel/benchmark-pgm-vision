@@ -61,10 +61,19 @@ def load_profile(data_path, input_data, extra_info, n_steps):
 
 
 def get_id_map(extra_info):
+    name_map = {
+        "Nodes": "Nodes",
+        "Cables": "kabel",
+        "Links": "link",
+        "Transformers": "transformator",
+        "Loads": "belasting",
+        "Earthing transformers": "nulpuntstransformator",
+        "Sources": "netvoeding"
+    }
     id_map = {}
     for i, info in extra_info.items():
         ref = info["id_reference"]
-        name = ref["table"]
+        name = name_map[ref["table"]]
         if "Subnumber" in ref["key"]:
             sub_number = ref["key"]["Subnumber"]
             node_number = ref["key"]["Node.Number"]
