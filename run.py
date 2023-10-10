@@ -44,6 +44,10 @@ def load_data(data_path, test_case, n_steps):
 
 
 def compare_results(pgm, pgm_result, vision_result, input_data):
+    print("\n\n---Total source power---")
+    s = pgm_result["source"]["p"] + 1j * pgm_result["source"]["q"]
+    max_s = np.max(np.abs(s))
+    print(f"Max apparent power of all sources: {max_s} VA")
     pgm_result, input_data = index_by_vision(pgm, pgm_result, vision_result, input_data)
     compare_nodes(pgm_result["node"], vision_result["node"], input_data["node"])
     compare_branches(pgm_result, vision_result, "line")
