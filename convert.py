@@ -1,14 +1,13 @@
-from pathlib import Path
-
-import pandas as pd
-from power_grid_model import initialize_array
-from power_grid_model.validation import assert_valid_input_data
-from power_grid_model_io.converters import VisionExcelConverter
-from power_grid_model.utils import msgpack_serialize_to_file
-import numpy as np
 import argparse
 import json
+from pathlib import Path
 
+import numpy as np
+import pandas as pd
+from power_grid_model import initialize_array
+from power_grid_model.utils import msgpack_serialize_to_file
+from power_grid_model.validation import assert_valid_input_data
+from power_grid_model_io.converters import VisionExcelConverter
 
 vision_config = Path(__file__).parent / "vision_en.yaml"
 
