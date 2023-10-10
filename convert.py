@@ -57,7 +57,7 @@ def load_profile(data_path, input_data, extra_info, n_steps):
         loads_with_profile["q_specified"][non_zero_index] / loads_with_profile["p_specified"][non_zero_index]
     ).reshape(1, -1) * load_update["p_specified"][:, non_zero_index]
     update_data = {"sym_load": load_update}
-    return update_data
+    return update_data, n_steps
 
 
 def get_id_map(extra_info):
@@ -131,7 +131,7 @@ def main():
     test_case = args.test_case
 
     input_data, extra_info = load_input(test_case, data_path)
-    update_data = load_profile(data_path, input_data, extra_info, n_steps)
+    update_data, n_steps = load_profile(data_path, input_data, extra_info, n_steps)
     result_data = load_vision_results(test_case, data_path, input_data, extra_info, n_steps)
 
     dump_to_file(data_path, test_case, input_data, update_data, result_data, extra_info)
