@@ -132,7 +132,6 @@ def main():
 
     input_data, extra_info = load_input(test_case, data_path)
     update_data = load_profile(data_path, input_data, extra_info, n_steps)
-
     result_data = load_vision_results(test_case, data_path, input_data, extra_info, n_steps)
 
     dump_to_file(data_path, test_case, input_data, update_data, result_data, extra_info)
