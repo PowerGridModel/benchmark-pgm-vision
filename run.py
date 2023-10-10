@@ -49,6 +49,8 @@ def compare_results(pgm, pgm_result, vision_result, input_data):
     compare_branches(pgm_result, vision_result, "line")
     compare_branches(pgm_result, vision_result, "transformer")
     compare_branches(pgm_result, vision_result, "link")
+    compare_appliances(pgm_result, vision_result, "sym_load")
+    compare_appliances(pgm_result, vision_result, "source")
 
 
 def index_by_vision(pgm, pgm_result, vision_result, input_data):
@@ -93,6 +95,18 @@ def compare_branches(pgm_result, vision_result, component):
     diff = np.abs(s_vision - s_pgm)
     diff_per_branch = np.max(diff, axis=(0, 2))
     max_diff = np.max(diff_per_branch)
+    print(f"\n\n---{component} Comparison---")
+    print(f"Max complex power deviation: {max_diff} VA")
+
+
+def compare_appliances(pgm_result, vision_result, component):
+    vision_app_result = vision_result[component]
+    pgm_app_result = pgm_result[component]
+    s_vision = vision_app_result["p"] + 1j * vision_app_result["q"]
+    s_pgm = pgm_app_result["p"] + 1j * pgm_app_result["q"]
+    diff = np.abs(s_vision - s_pgm)
+    diff_per_app = np.max(diff, axis=0)
+    max_diff = np.max(diff_per_app)
     print(f"\n\n---{component} Comparison---")
     print(f"Max complex power deviation: {max_diff} VA")
 
