@@ -80,6 +80,7 @@ def dump_to_file(data_path: Path, test_case, input_data, update_data, extra_info
         json.dump(extra_info, f, cls=NpEncoder, indent=2)
 
 
+# noinspection DuplicatedCode
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("data_path", type=Path, help="Path to the data")
