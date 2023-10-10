@@ -44,19 +44,30 @@ def load_data(data_path, test_case, n_steps):
 
 
 def compare_results(pgm, pgm_result, vision_result, input_data):
-    compare_nodes(pgm, pgm_result["node"], vision_result["node"], input_data["node"])
+    pgm_result, input_data = index_by_vision(pgm, pgm_result, vision_result, input_data)
+    compare_nodes(pgm_result["node"], vision_result["node"], input_data["node"])
+    compare_branches(pgm_result, vision_result, "line")
+    compare_branches(pgm_result, vision_result, "transformer")
+    compare_branches(pgm_result, vision_result, "link")
 
 
-def compare_nodes(pgm, pgm_result, vision_result, input_data):
-    node_indexer = pgm.get_indexer("node", vision_result[0, :]["id"])
-    pgm_result = pgm_result[:, node_indexer]
-    input_data = input_data[node_indexer]
-    diff = np.abs(pgm_result["u"] - vision_result["u"])
+def index_by_vision(pgm, pgm_result, vision_result, input_data):
+    sliced_pgm_result = {}
+    sliced_input_data = {}
+    for name, vision_array in vision_result.items():
+        indexer = pgm.get_indexer(name, vision_array[0, :]["id"])
+        sliced_pgm_result[name] = pgm_result[name][:, indexer]
+        sliced_input_data[name] = input_data[name][indexer]
+    return sliced_pgm_result, sliced_input_data
+
+
+def compare_nodes(pgm_node_result, vision_node_result, node_input_data):
+    diff = np.abs(pgm_node_result["u"] - vision_node_result["u"])
     max_diff_per_node = np.max(diff, axis=0)
-    max_diff_pu_per_node = np.max(diff / input_data["u_rated"].reshape(1, -1), axis=0)
+    max_diff_pu_per_node = np.max(diff / node_input_data["u_rated"].reshape(1, -1), axis=0)
     max_diff = np.max(max_diff_per_node)
     max_diff_pu = np.max(max_diff_pu_per_node)
-    hvmv_select = input_data["u_rated"] > 1e3
+    hvmv_select = node_input_data["u_rated"] > 1e3
     max_diff_hvmv = np.max(max_diff_per_node[hvmv_select])
     max_diff_pu_hvmv = np.max(max_diff_pu_per_node[hvmv_select])
     max_diff_lv = np.max(max_diff_per_node[~hvmv_select])
@@ -68,6 +79,22 @@ def compare_nodes(pgm, pgm_result, vision_result, input_data):
     print(f"Max HV/MV voltage deviation: {max_diff_pu_hvmv} pu.")
     print(f"Max LV voltage deviation: {max_diff_lv} V.")
     print(f"Max LV voltage deviation: {max_diff_pu_lv} pu.")
+
+
+def compare_branches(pgm_result, vision_result, component):
+    vision_branch_result = vision_result[component]
+    pgm_branch_result = pgm_result[component]
+    s_from_vision = vision_branch_result["p_from"] + 1j * vision_branch_result["q_from"]
+    s_to_vision = vision_branch_result["p_to"] + 1j * vision_branch_result["q_to"]
+    s_from_pgm = pgm_branch_result["p_from"] + 1j * pgm_branch_result["q_from"]
+    s_to_pgm = pgm_branch_result["p_to"] + 1j * pgm_branch_result["q_to"]
+    s_vision = np.stack((s_from_vision, s_to_vision), axis=2)
+    s_pgm = np.stack((s_from_pgm, s_to_pgm), axis=2)
+    diff = np.abs(s_vision - s_pgm)
+    diff_per_branch = np.max(diff, axis=(0, 2))
+    max_diff = np.max(diff_per_branch)
+    print(f"\n\n---{component} Comparison---")
+    print(f"Max complex power deviation: {max_diff} VA")
 
 
 # noinspection DuplicatedCode
