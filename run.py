@@ -36,6 +36,7 @@ def load_data(data_path, test_case, n_steps):
 
     if n_steps is not None:
         update_data = {k: v[:n_steps, ...] for k, v in update_data.items()}
+        vision_result = {k: v[:n_steps, ...] for k, v in vision_result.items()}
     else:
         n_steps = next(iter(update_data.values())).shape[0]
 
