@@ -51,7 +51,7 @@ def compare_results(pgm, pgm_result, vision_result, input_data):
     print("\n\n---Total source power---")
     s = pgm_result["source"]["p"] + 1j * pgm_result["source"]["q"]
     max_s = np.max(np.abs(s))
-    print(f"Max apparent power of all sources: {max_s} VA")
+    print(f"Max apparent power of all sources: {max_s * 1e-6} MVA")
     pgm_result, input_data = index_by_vision(pgm, pgm_result, vision_result, input_data)
     compare_nodes(pgm_result["node"], vision_result["node"], input_data["node"])
     compare_branches(pgm_result, vision_result, "line")
@@ -104,7 +104,7 @@ def compare_branches(pgm_result, vision_result, component):
     diff_per_branch = np.max(diff, axis=(0, 2))
     max_diff = np.max(diff_per_branch)
     print(f"\n\n---{component} Comparison---")
-    print(f"Max complex power deviation: {max_diff} VA")
+    print(f"Max complex power deviation: {max_diff * 1e-6} MVA")
 
 
 def compare_appliances(pgm_result, vision_result, component):
@@ -116,7 +116,7 @@ def compare_appliances(pgm_result, vision_result, component):
     diff_per_app = np.max(diff, axis=0)
     max_diff = np.max(diff_per_app)
     print(f"\n\n---{component} Comparison---")
-    print(f"Max complex power deviation: {max_diff} VA")
+    print(f"Max complex power deviation: {max_diff * 1e-6} MVA")
 
 
 # noinspection DuplicatedCode
