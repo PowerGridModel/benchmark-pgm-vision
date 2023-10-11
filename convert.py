@@ -197,7 +197,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("data_path", type=Path, help="Path to the data")
     parser.add_argument("--n-steps", type=int, help="Number of steps to run")
-    parser.add_argument("--test-case", type=str, help="Name of test case")
+    parser.add_argument("--test-case", type=str, help="Name of test case", default="Leeuwarden_small_P")
     args = parser.parse_args()
     data_path = args.data_path
     n_steps = args.n_steps

@@ -29,6 +29,8 @@ def run(input_data, update_data, calculation_method, n_steps):
 
 
 def load_data(data_path, test_case, n_steps):
+    print("\n\n---Load data---")
+    start = time()
     path = data_path / "PGM_data" / test_case
     input_data = msgpack_deserialize_from_file(path / "input.pgmb")
     update_data = msgpack_deserialize_from_file(path / "update.pgmb")
@@ -39,6 +41,8 @@ def load_data(data_path, test_case, n_steps):
         vision_result = {k: v[:n_steps, ...] for k, v in vision_result.items()}
     else:
         n_steps = next(iter(update_data.values())).shape[0]
+    end = time()
+    print(f"Time cost: {end - start} seconds")
 
     return input_data, update_data, vision_result, n_steps
 
