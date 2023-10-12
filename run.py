@@ -41,18 +41,35 @@ def load_data(data_path, test_case, n_steps):
         vision_result = {k: v[:n_steps, ...] for k, v in vision_result.items()}
     else:
         n_steps = next(iter(update_data.values())).shape[0]
+    simplify_result_data(vision_result)
     end = time()
     print(f"Time cost: {end - start} seconds")
 
     return input_data, update_data, vision_result, n_steps
 
 
-def compare_results(pgm, pgm_result, vision_result, input_data):
+def simplify_result_data(result_data):
+    # modify result data in place
+    for name, array in result_data.items():
+        ids = array[0, :]["id"]
+        if name == "node":
+            new_array = {"id": ids, "u": array["u"]}
+        elif name in {"sym_load", "source", "shunt"}:
+            new_array = {"id": ids, "s": array["p"] + 1j * array["q"]}
+        elif name in {"link", "line", "transformer"}:
+            new_array = {
+                "id": ids,
+                "s": np.stack((array["p_from"] + 1j * array["q_from"], array["p_to"] + 1j * array["q_to"]), axis=2),
+            }
+        else:
+            new_array = array
+        result_data[name] = new_array
+
+
+def compare_results(pgm_result, vision_result, input_data):
     print("\n\n---Total source power---")
-    s = pgm_result["source"]["p"] + 1j * pgm_result["source"]["q"]
-    max_s = np.max(np.abs(s))
+    max_s = np.max(np.abs(pgm_result["source"]["s"]))
     print(f"Max apparent power of all sources: {max_s * 1e-6} MVA")
-    pgm_result, input_data = index_by_vision(pgm, pgm_result, vision_result, input_data)
     compare_nodes(pgm_result["node"], vision_result["node"], input_data["node"])
     compare_branches(pgm_result, vision_result, "line")
     compare_branches(pgm_result, vision_result, "transformer")
@@ -62,13 +79,11 @@ def compare_results(pgm, pgm_result, vision_result, input_data):
 
 
 def index_by_vision(pgm, pgm_result, vision_result, input_data):
-    sliced_pgm_result = {}
-    sliced_input_data = {}
+    # slide pgm input and result in place
     for name, vision_array in vision_result.items():
-        indexer = pgm.get_indexer(name, vision_array[0, :]["id"])
-        sliced_pgm_result[name] = pgm_result[name][:, indexer]
-        sliced_input_data[name] = input_data[name][indexer]
-    return sliced_pgm_result, sliced_input_data
+        indexer = pgm.get_indexer(name, vision_array["id"])
+        pgm_result[name] = pgm_result[name][:, indexer]
+        input_data[name] = input_data[name][indexer]
 
 
 def compare_nodes(pgm_node_result, vision_node_result, node_input_data):
@@ -94,13 +109,7 @@ def compare_nodes(pgm_node_result, vision_node_result, node_input_data):
 def compare_branches(pgm_result, vision_result, component):
     vision_branch_result = vision_result[component]
     pgm_branch_result = pgm_result[component]
-    s_from_vision = vision_branch_result["p_from"] + 1j * vision_branch_result["q_from"]
-    s_to_vision = vision_branch_result["p_to"] + 1j * vision_branch_result["q_to"]
-    s_from_pgm = pgm_branch_result["p_from"] + 1j * pgm_branch_result["q_from"]
-    s_to_pgm = pgm_branch_result["p_to"] + 1j * pgm_branch_result["q_to"]
-    s_vision = np.stack((s_from_vision, s_to_vision), axis=2)
-    s_pgm = np.stack((s_from_pgm, s_to_pgm), axis=2)
-    diff = np.abs(s_vision - s_pgm)
+    diff = np.abs(vision_branch_result["s"] - pgm_branch_result["s"])
     diff_per_branch = np.max(diff, axis=(0, 2))
     max_diff = np.max(diff_per_branch)
     print(f"\n\n---{component} Comparison---")
@@ -110,9 +119,7 @@ def compare_branches(pgm_result, vision_result, component):
 def compare_appliances(pgm_result, vision_result, component):
     vision_app_result = vision_result[component]
     pgm_app_result = pgm_result[component]
-    s_vision = vision_app_result["p"] + 1j * vision_app_result["q"]
-    s_pgm = pgm_app_result["p"] + 1j * pgm_app_result["q"]
-    diff = np.abs(s_vision - s_pgm)
+    diff = np.abs(vision_app_result["s"] - pgm_app_result["s"])
     diff_per_app = np.max(diff, axis=0)
     max_diff = np.max(diff_per_app)
     print(f"\n\n---{component} Comparison---")
@@ -137,7 +144,10 @@ def main():
 
     input_data, update_data, vision_result, n_steps = load_data(data_path, test_case, n_steps)
     pgm, pgm_result = run(input_data, update_data, calculation_method, n_steps)
-    compare_results(pgm, pgm_result, vision_result, input_data)
+    del update_data
+    index_by_vision(pgm, pgm_result, vision_result, input_data)
+    simplify_result_data(pgm_result)
+    compare_results(pgm_result, vision_result, input_data)
 
 
 if __name__ == "__main__":
