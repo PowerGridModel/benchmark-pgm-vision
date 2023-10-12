@@ -32,9 +32,9 @@ def load_data(data_path, test_case, n_steps):
     print("\n\n---Load data---")
     start = time()
     path = data_path / "PGM_data" / test_case
+    vision_result = msgpack_deserialize_from_file(path / "result.pgmb")
     input_data = msgpack_deserialize_from_file(path / "input.pgmb")
     update_data = msgpack_deserialize_from_file(path / "update.pgmb")
-    vision_result = msgpack_deserialize_from_file(path / "result.pgmb")
 
     if n_steps is not None:
         update_data = {k: v[:n_steps, ...] for k, v in update_data.items()}
