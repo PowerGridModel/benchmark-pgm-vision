@@ -20,3 +20,4 @@ for v in data.values():
 
 print(f"Memory usage of file size: {file_size} GB.")
 print(f"Memory usage of buffers: {buffer_size} GB.")
+print(f"Total unavoidable memory usage: {file_size + buffer_size} GB.")
